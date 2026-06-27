@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopping Cart Engine — API Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08090e;
+      --surface: #10121a;
+      --surface2: #161923;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.14);
+      --text: #e8eaf0;
+      --text-muted: #6b7280;
+      --text-dim: #9ca3af;
+      --accent: #7c6ef5;
+      --accent2: #5b8ef0;
+      --green: #22c55e;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+    }
+    .logo span { font-weight: 300; }
+    .topbar-sep { flex: 1; }
+    .base-url-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      min-width: 340px;
+    }
+    .base-url-label { font-size: 11px; color: var(--text-muted); white-space: nowrap; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .base-url-input {
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      flex: 1;
+      min-width: 0;
+    }
+    .health-btn {
+      background: linear-gradient(135deg, #22c55e20, #16a34a20);
+      border: 1px solid #22c55e40;
+      color: var(--green);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .health-btn:hover { background: linear-gradient(135deg, #22c55e35, #16a34a35); border-color: #22c55e70; }
+    .health-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+    /* ── LAYOUT ── */
+    .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 60px); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+    .sidebar-group { margin-bottom: 4px; }
+    .sidebar-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      padding: 8px 20px 6px;
+    }
+    .endpoint-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 9px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      transition: background 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .endpoint-btn:hover { background: rgba(255,255,255,0.04); }
+    .endpoint-btn.active {
+      background: linear-gradient(90deg, rgba(124,110,245,0.12), transparent);
+      border-left-color: var(--accent);
+    }
+    .method-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 5px;
+      min-width: 52px;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .method-get    { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .method-post   { background: rgba(34,197,94,0.15);  color: #4ade80; }
+    .method-delete { background: rgba(239,68,68,0.15);  color: #f87171; }
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .endpoint-btn.active .endpoint-path { color: var(--text); }
+
+    /* ── MAIN ── */
+    .main { flex: 1; overflow-y: auto; display: flex; gap: 0; }
+    .main::-webkit-scrollbar { width: 4px; }
+    .main::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+    .panel { flex: 1; padding: 28px; display: flex; flex-direction: column; gap: 20px; max-width: 680px; }
+    .response-panel { width: 420px; min-width: 360px; padding: 28px; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── ENDPOINT HEADER ── */
+    .endpoint-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+    }
+    .endpoint-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .method-badge-lg {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+    }
+    .endpoint-full-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .endpoint-desc { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ── FORM ── */
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+    .form-input, .form-textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,110,245,0.1); }
+    .form-textarea { resize: vertical; min-height: 120px; }
+    .form-hint { font-size: 11px; color: var(--text-muted); }
+
+    /* ── SEND BUTTON ── */
+    .send-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+    .send-btn:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,110,245,0.35); }
+    .send-btn:active { transform: translateY(0); }
+    .send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSE ── */
+    .response-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .status-ok    { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.25);  color: var(--green); }
+    .status-err   { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25);  color: var(--red); }
+    .status-idle  { background: var(--surface2); border-color: var(--border); color: var(--text-muted); }
+    .status-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-ok       { background: var(--green); }
+    .dot-err      { background: var(--red); }
+    .dot-idle     { background: var(--text-muted); }
+    .status-time  { margin-left: auto; font-weight: 400; font-size: 12px; opacity: 0.8; }
+
+    .response-body {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.7;
+      white-space: pre;
+      overflow: auto;
+      flex: 1;
+      color: var(--text-dim);
+      min-height: 200px;
+    }
+    .response-body::-webkit-scrollbar { width: 4px; height: 4px; }
+    .response-body::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+    /* JSON syntax highlight */
+    .json-key    { color: #93c5fd; }
+    .json-str    { color: #86efac; }
+    .json-num    { color: #fbbf24; }
+    .json-bool   { color: #c084fc; }
+    .json-null   { color: #f87171; }
+
+    .copy-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border-bright);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    .response-header-row { display: flex; align-items: center; justify-content: space-between; }
+
+    /* ── USER ID PILL ── */
+    .userid-pill {
+      background: rgba(124,110,245,0.1);
+      border: 1px solid rgba(124,110,245,0.3);
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .userid-pill button { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; line-height: 1; }
+    #current-user-row { display: none; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #current-user-row.show { display: flex; }
+
+    /* ── WELCOME STATE ── */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .welcome-icon { font-size: 56px; }
+    .welcome h2 { font-size: 20px; color: var(--text-dim); font-weight: 600; }
+    .welcome p { font-size: 14px; max-width: 300px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="topbar">
+  <div class="logo">Cart Engine <span>/ API Dashboard</span></div>
+  <div class="topbar-sep"></div>
+  <div id="current-user-row">
+    <span style="font-size:12px;color:var(--text-muted);">Active User:</span>
+    <div class="userid-pill">
+      <span id="active-userid-display">—</span>
+      <button onclick="clearActiveUser()" title="Clear">✕</button>
+    </div>
+  </div>
+  <div class="base-url-wrap">
+    <span class="base-url-label">Base URL</span>
+    <input class="base-url-input" id="base-url" value="http://localhost:3000" placeholder="http://localhost:3000" />
+  </div>
+  <button class="health-btn" onclick="quickHealth()">
+    <span class="health-dot"></span>Health Check
+  </button>
+</div>
+
+<!-- ═══════════ LAYOUT ═══════════ -->
+<div class="layout">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">System</div>
+      <button class="endpoint-btn" onclick="select('health')" id="btn-health">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/health</span>
+      </button>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Users</div>
+      <button class="endpoint-btn" onclick="select('createUser')" id="btn-createUser">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint-path">/api/users</span>
+      </button>
+      <button class="endpoint-btn" onclick="select('getUser')" id="btn-getUser">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/api/users/:userId</span>
+      </button>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Cart</div>
+      <button class="endpoint-btn" onclick="select('getCart')" id="btn-getCart">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/api/cart/:userId</span>
+      </button>
+      <button class="endpoint-btn" onclick="select('upsertItem')" id="btn-upsertItem">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint-path">/api/cart/:userId/items</span>
+      </button>
+      <button class="endpoint-btn" onclick="select('checkout')" id="btn-checkout">
+        <span class="method-badge method-get">GET</span>
+        <span class="endpoint-path">/api/cart/:userId/checkout</span>
+      </button>
+      <button class="endpoint-btn" onclick="select('removeItem')" id="btn-removeItem">
+        <span class="method-badge method-delete">DEL</span>
+        <span class="endpoint-path">/api/cart/:userId/items/:productId</span>
+      </button>
+      <button class="endpoint-btn" onclick="select('clearCart')" id="btn-clearCart">
+        <span class="method-badge method-delete">DEL</span>
+        <span class="endpoint-path">/api/cart/:userId</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════ MAIN PANEL ═══════════ -->
+  <div class="main">
+    <div class="panel" id="panel">
+      <div class="welcome">
+        <div class="welcome-icon">🛒</div>
+        <h2>Shopping Cart Engine</h2>
+        <p>Select an endpoint from the sidebar to start testing your API</p>
+      </div>
+    </div>
+
+    <!-- ═══════════ RESPONSE PANEL ═══════════ -->
+    <div class="response-panel">
+      <div class="response-header-row">
+        <div class="card-title" style="margin:0;">Response</div>
+        <button class="copy-btn" onclick="copyResponse()">Copy</button>
+      </div>
+      <div class="response-status status-idle" id="status-bar">
+        <span class="status-dot dot-idle"></span>
+        <span id="status-text">Awaiting request…</span>
+      </div>
+      <div class="response-body" id="response-body">// Response will appear here</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let activeUserId = '';
+  let lastResponse = '';
+
+  // ── ENDPOINTS CONFIG ──────────────────────────────────────────────────────
+  const endpoints = {
+    health: {
+      method: 'GET', path: '/health',
+      desc: 'Check if the server is running and healthy.',
+      fields: [],
+    },
+    createUser: {
+      method: 'POST', path: '/api/users',
+      desc: 'Create a new user. The returned userId is automatically saved for other requests.',
+      fields: [
+        { id: 'cu_name',  label: 'Name',  placeholder: 'John Doe', hint: 'Required. 2–100 characters.' },
+        { id: 'cu_email', label: 'Email', placeholder: 'john@example.com', hint: 'Required. Must be unique.' },
+      ],
+      buildBody: () => ({ name: v('cu_name'), email: v('cu_email') }),
+    },
+    getUser: {
+      method: 'GET', path: '/api/users/:userId',
+      desc: 'Get a user profile by their ID.',
+      fields: [{ id: 'gu_uid', label: 'User ID', placeholder: 'Paste userId here or use active user', hint: 'MongoDB ObjectId' }],
+      buildUrl: (base) => `${base}/api/users/${v('gu_uid') || activeUserId}`,
+    },
+    getCart: {
+      method: 'GET', path: '/api/cart/:userId',
+      desc: 'Get the current cart for a user. Returns an empty cart if no items added yet.',
+      fields: [{ id: 'gc_uid', label: 'User ID', placeholder: 'Paste userId here or use active user', hint: '' }],
+      buildUrl: (base) => `${base}/api/cart/${v('gc_uid') || activeUserId}`,
+    },
+    upsertItem: {
+      method: 'POST', path: '/api/cart/:userId/items',
+      desc: 'Add a new item or update existing one. Set quantity=0 to remove the item.',
+      fields: [
+        { id: 'ui_uid',      label: 'User ID',    placeholder: 'Leave empty to use active user', hint: '' },
+        { id: 'ui_pid',      label: 'Product ID', placeholder: 'PROD-001', hint: 'Unique string ID for the product' },
+        { id: 'ui_name',     label: 'Name',       placeholder: 'Gaming Mouse', hint: '' },
+        { id: 'ui_price',    label: 'Price',      placeholder: '49.99', hint: 'Decimal number' },
+        { id: 'ui_qty',      label: 'Quantity',   placeholder: '2', hint: 'Set to 0 to remove item' },
+        { id: 'ui_category', label: 'Category',   placeholder: 'Electronics', hint: 'Optional product category' },
+      ],
+      buildUrl: (base) => `${base}/api/cart/${v('ui_uid') || activeUserId}/items`,
+      buildBody: () => ({
+        productId: v('ui_pid'),
+        name: v('ui_name'),
+        price: parseFloat(v('ui_price')),
+        quantity: parseInt(v('ui_qty')),
+        category: v('ui_category'),
+      }),
+    },
+    checkout: {
+      method: 'GET', path: '/api/cart/:userId/checkout',
+      desc: 'Compute checkout summary with dynamic campaign pricing. Read-only — does not create an order.',
+      fields: [{ id: 'co_uid', label: 'User ID', placeholder: 'Leave empty to use active user', hint: '' }],
+      buildUrl: (base) => `${base}/api/cart/${v('co_uid') || activeUserId}/checkout`,
+    },
+    removeItem: {
+      method: 'DELETE', path: '/api/cart/:userId/items/:productId',
+      desc: 'Remove a specific item from the cart by productId.',
+      fields: [
+        { id: 'ri_uid', label: 'User ID',    placeholder: 'Leave empty to use active user', hint: '' },
+        { id: 'ri_pid', label: 'Product ID', placeholder: 'PROD-001', hint: 'The productId to remove' },
+      ],
+      buildUrl: (base) => `${base}/api/cart/${v('ri_uid') || activeUserId}/items/${v('ri_pid')}`,
+    },
+    clearCart: {
+      method: 'DELETE', path: '/api/cart/:userId',
+      desc: 'Clear all items from the cart. The cart document is kept but emptied.',
+      fields: [{ id: 'cc_uid', label: 'User ID', placeholder: 'Leave empty to use active user', hint: '' }],
+      buildUrl: (base) => `${base}/api/cart/${v('cc_uid') || activeUserId}`,
+    },
+  };
+
+  const methodColor = { GET: 'method-get', POST: 'method-post', DELETE: 'method-delete' };
+  const methodLabel = { GET: 'GET', POST: 'POST', DELETE: 'DELETE' };
+
+  function v(id) { return (document.getElementById(id)||{}).value?.trim() || ''; }
+
+  // ── RENDER ENDPOINT FORM ─────────────────────────────────────────────────
+  let activeKey = null;
+  function select(key) {
+    if (activeKey) document.getElementById('btn-' + activeKey)?.classList.remove('active');
+    activeKey = key;
+    document.getElementById('btn-' + key)?.classList.add('active');
+
+    const ep = endpoints[key];
+    const panel = document.getElementById('panel');
+    const mc = methodColor[ep.method];
+    const hasBody = !!ep.buildBody;
+
+    let fieldsHtml = ep.fields.map(f => `
+      <div class="form-group">
+        <label class="form-label" for="${f.id}">${f.label}</label>
+        <input class="form-input" id="${f.id}" placeholder="${f.placeholder}" autocomplete="off" />
+        ${f.hint ? `<span class="form-hint">${f.hint}</span>` : ''}
+      </div>`).join('');
+
+    panel.innerHTML = `
+      <div class="endpoint-header">
+        <div class="endpoint-title">
+          <span class="method-badge-lg method-badge ${mc}">${methodLabel[ep.method]}</span>
+          <span class="endpoint-full-path">${ep.path}</span>
+        </div>
+        <div class="endpoint-desc">${ep.desc}</div>
+      </div>
+
+      ${activeUserId ? `
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--text-muted);">Active user:</span>
+          <div class="userid-pill"><span>${activeUserId}</span><button onclick="clearActiveUser()" title="Clear">✕</button></div>
+          <span style="font-size:11px;color:var(--text-muted);">(auto-filled in userId fields)</span>
+        </div>` : ''}
+
+      ${fieldsHtml ? `<div class="card"><div class="card-title">Parameters</div>${fieldsHtml}</div>` : ''}
+
+      <button class="send-btn" id="send-btn" onclick="send('${key}')">
+        <span class="spinner" id="spinner"></span>
+        <span id="send-label">Send Request ↗</span>
+      </button>
+    `;
+  }
+
+  // ── SEND REQUEST ─────────────────────────────────────────────────────────
+  async function send(key) {
+    const ep = endpoints[key];
+    const base = document.getElementById('base-url').value.replace(/\/$/, '');
+
+    let url = ep.buildUrl ? ep.buildUrl(base) : `${base}${ep.path}`;
+    const options = { method: ep.method, headers: {} };
+    if (ep.buildBody) {
+      options.body = JSON.stringify(ep.buildBody());
+      options.headers['Content-Type'] = 'application/json';
+    }
+
+    setSending(true);
+    const t0 = Date.now();
+    try {
+      const res = await fetch(url, options);
+      const ms = Date.now() - t0;
+      const data = await res.json();
+      lastResponse = JSON.stringify(data, null, 2);
+
+      showStatus(res.ok, res.status, ms);
+      document.getElementById('response-body').innerHTML = syntaxHighlight(lastResponse);
+
+      // Auto-save userId from createUser response
+      if (key === 'createUser' && data?.data?.user?._id) {
+        setActiveUser(data.data.user._id);
+        select('createUser'); // re-render to show active user
+      }
+    } catch (e) {
+      const ms = Date.now() - t0;
+      lastResponse = JSON.stringify({ error: e.message }, null, 2);
+      showStatus(false, 0, ms);
+      document.getElementById('response-body').innerHTML = syntaxHighlight(lastResponse);
+    }
+    setSending(false);
+  }
+
+  async function quickHealth() {
+    const base = document.getElementById('base-url').value.replace(/\/$/, '');
+    try {
+      const t0 = Date.now();
+      const res = await fetch(`${base}/health`);
+      const ms = Date.now() - t0;
+      const data = await res.json();
+      lastResponse = JSON.stringify(data, null, 2);
+      showStatus(res.ok, res.status, ms);
+      document.getElementById('response-body').innerHTML = syntaxHighlight(lastResponse);
+      if (activeKey !== 'health') { select('health'); }
+    } catch(e) {
+      showStatus(false, 0, 0);
+      document.getElementById('response-body').textContent = e.message;
+    }
+  }
+
+  // ── UI HELPERS ────────────────────────────────────────────────────────────
+  function setSending(on) {
+    const btn = document.getElementById('send-btn');
+    const sp = document.getElementById('spinner');
+    const lb = document.getElementById('send-label');
+    if (!btn) return;
+    btn.disabled = on;
+    if (sp) sp.style.display = on ? 'block' : 'none';
+    if (lb) lb.textContent = on ? 'Sending…' : 'Send Request ↗';
+  }
+
+  function showStatus(ok, code, ms) {
+    const bar = document.getElementById('status-bar');
+    const txt = document.getElementById('status-text');
+    bar.className = 'response-status ' + (ok ? 'status-ok' : 'status-err');
+    bar.innerHTML = `
+      <span class="status-dot ${ok ? 'dot-ok' : 'dot-err'}"></span>
+      <span>${ok ? '✓ ' : '✗ '} ${code} ${code === 200 ? 'OK' : code === 201 ? 'Created' : code === 404 ? 'Not Found' : code === 400 ? 'Bad Request' : code === 0 ? 'Network Error' : 'Error'}</span>
+      <span class="status-time">${ms}ms</span>
+    `;
+  }
+
+  function setActiveUser(uid) {
+    activeUserId = uid;
+    document.getElementById('active-userid-display').textContent = uid;
+    document.getElementById('current-user-row').classList.add('show');
+  }
+
+  function clearActiveUser() {
+    activeUserId = '';
+    document.getElementById('active-userid-display').textContent = '—';
+    document.getElementById('current-user-row').classList.remove('show');
+    if (activeKey) select(activeKey);
+  }
+
+  function copyResponse() {
+    if (!lastResponse) return;
+    navigator.clipboard.writeText(lastResponse).catch(()=>{});
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  }
+
+  // ── JSON SYNTAX HIGHLIGHT ─────────────────────────────────────────────────
+  function syntaxHighlight(json) {
+    return json
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+        let cls = 'json-num';
+        if (/^"/.test(match)) cls = /:$/.test(match) ? 'json-key' : 'json-str';
+        else if (/true|false/.test(match)) cls = 'json-bool';
+        else if (/null/.test(match)) cls = 'json-null';
+        return `<span class="${cls}">${match}</span>`;
+      });
+  }
+</script>
+</body>
+</html>

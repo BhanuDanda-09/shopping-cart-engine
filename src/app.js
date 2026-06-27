@@ -11,6 +11,9 @@ const app = express();
    GLOBAL MIDDLEWARE
    ───────────────────────────────────────────────────────────────────────────── */
 
+// Serve static files from public/ (API dashboard at root)
+app.use(express.static('public'));
+
 // Parse incoming JSON payloads
 app.use(express.json({ limit: '10kb' })); // Reject payloads > 10KB
 

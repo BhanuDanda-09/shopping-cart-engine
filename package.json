@@ -1,0 +1,33 @@
+{
+  "name": "shopping-cart-engine",
+  "version": "1.0.0",
+  "description": "Adaptive E-Commerce Cart Engine - Production-ready Node.js/Express/MongoDB microservice",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [
+    "ecommerce",
+    "cart",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "Backend Engineering Assignment",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "^7.5.1",
+    "express-validator": "^7.3.2",
+    "mongodb": "^7.4.0",
+    "mongoose": "^8.24.1",
+    "morgan": "^1.11.0",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

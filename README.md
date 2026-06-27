@@ -28,8 +28,8 @@
 | Runtime     | Node.js 18+               |
 | Framework   | Express 4.x               |
 | Database    | MongoDB + Mongoose 8.x    |
-| Validation  | express-validator          |
-| Rate Limit  | express-rate-limit         |
+| Validation  | express-validator         |
+| Rate Limit  | express-rate-limit        |
 | Config      | dotenv                    |
 
 ---
@@ -74,7 +74,7 @@ shopping-cart-engine/
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/BhanuDanda-09/shopping-cart-engine.git
 cd shopping-cart-engine
 
 # 2. Install dependencies
@@ -82,7 +82,7 @@ npm install
 
 # 3. Configure environment
 # Edit .env with your MongoDB URI
-cp .env.example .env   # or edit .env directly
+cp .env.example .env   # or edit .env directly  
 
 # .env contents:
 # PORT=3000
@@ -95,10 +95,6 @@ npm start
 # For development with auto-reload:
 npm run dev
 ```
-
-The server starts at `http://localhost:3000`.
-Verify with: `GET http://localhost:3000/health`
-
 ---
 
 ## API Reference
@@ -107,7 +103,7 @@ Verify with: `GET http://localhost:3000/health`
 
 ### Base URL
 ```
-http://localhost:3000/api
+https://shopping-cart-engine-q7oq.onrender.com
 ```
 
 ---
@@ -196,11 +192,11 @@ Returns the user's current cart. Returns an empty cart if no items added yet.
 
 The primary ingestion endpoint. Behaviour is determined by `quantity`:
 
-| Scenario                | Behaviour   |
-|-------------------------|-------------|
-| productId not in cart   | **Adds** item |
-| productId already in cart | **Updates** quantity, price, name, category |
-| quantity = 0            | **Removes** item from cart |
+| Scenario                  | Behaviour                                      |
+|---------------------------|------------------------------------------------|
+| productId not in cart     | **Adds** item                                  |
+| productId already in cart | **Updates** quantity, price, name, category    |
+| quantity = 0              | **Removes** item from cart                     |
 
 **Request Body:**
 ```json
@@ -356,10 +352,10 @@ Categories are normalized to lowercase before comparison (`"Electronics"` and `"
 
 **What:** Two-tier rate limiting using `express-rate-limit`.
 
-| Limiter    | Scope            | Limit              |
-|------------|------------------|--------------------|
-| Global     | All `/api` routes | 100 req / 15 min   |
-| Checkout   | `/checkout` only | 20 req / 15 min    |
+| Limiter    | Scope             | Limit                     |
+|------------|-------------------|---------------------------|
+| Global     | All `/api` routes | 100 req / 15 min          |
+| Checkout   | `/checkout` only  | 20 req / 15 min           |
 
 **Why:**
 1. **Discount Scraping Prevention** — Bots probing the checkout endpoint could reverse-engineer tier thresholds.

@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "fresh": "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\"; npm run dev"
   },
   "keywords": [
     "ecommerce",
